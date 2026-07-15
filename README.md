@@ -106,7 +106,7 @@ make flash
 
 For the first install, when the flasher starts waiting, use the board's physical
 reset control (or briefly bridge `RST` and `GND`) to enter the bootloader. Once
-this firmware is installed, holding all three knobs for four seconds enters the
+this firmware is installed, holding all three knobs for two seconds enters the
 bootloader; all LEDs turn red first. The helper resets the board back into the
 deck firmware after a successful write.
 

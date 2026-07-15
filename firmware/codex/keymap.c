@@ -16,10 +16,9 @@ enum layers {
 
 enum custom_keycodes {
     MODE_CODEX = SAFE_RANGE,
+    MODE_MEDIA,
     MODE_HERDR,
 };
-
-#define MODE_MEDIA   TO(_MEDIA)
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_CODEX] = LAYOUT(
@@ -99,29 +98,56 @@ static void paint_layer(uint8_t layer) {
     }
 }
 
-static bool     boot_hold_active = false;
-static uint16_t boot_hold_timer  = 0;
+static bool     mode_knob_pressed[3] = {false, false, false};
+static bool     reset_combo_latched  = false;
+static uint16_t reset_combo_timer    = 0;
 static bool     dictation_knob_held = false;
 static bool     dictation_held   = false;
 static uint16_t dictation_timer  = 0;
 
-bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    if (keycode == MODE_CODEX) {
-        if (record->event.pressed) {
-            layer_move(_CODEX);
-        }
-        return false;
+static int8_t mode_knob_index(uint16_t keycode) {
+    switch (keycode) {
+        case MODE_CODEX: return 0;
+        case MODE_MEDIA: return 1;
+        case MODE_HERDR: return 2;
+        default: return -1;
     }
+}
 
-    if (keycode != MODE_HERDR) {
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    const int8_t knob = mode_knob_index(keycode);
+    if (knob < 0) {
         return true;
     }
 
     if (record->event.pressed) {
-        dictation_knob_held = true;
-        dictation_held      = false;
-        dictation_timer     = timer_read();
+        mode_knob_pressed[knob] = true;
+        if (knob == 2) {
+            dictation_knob_held = true;
+            dictation_held      = false;
+            dictation_timer     = timer_read();
+        }
     } else {
+        mode_knob_pressed[knob] = false;
+
+        /* Suppress mode changes and dictation until a reset chord is released. */
+        if (reset_combo_latched) {
+            if (!mode_knob_pressed[0] && !mode_knob_pressed[1] && !mode_knob_pressed[2]) {
+                reset_combo_latched = false;
+                paint_layer(get_highest_layer(layer_state));
+            }
+            return false;
+        }
+
+        if (knob == 0) {
+            layer_move(_CODEX);
+            return false;
+        }
+        if (knob == 1) {
+            layer_move(_MEDIA);
+            return false;
+        }
+
         dictation_knob_held = false;
         if (dictation_held) {
             unregister_code16(S(KC_F24));
@@ -134,27 +160,24 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 }
 
 void matrix_scan_user(void) {
-    /* Hold all three knobs for 4s to enter the bootloader. */
-    const bool reset_combo = matrix_is_on(2, 4) && matrix_is_on(1, 4) && matrix_is_on(0, 4);
+    /* Track the actual knob key events; raw matrix polling was unreliable. */
+    const bool reset_combo = mode_knob_pressed[0] && mode_knob_pressed[1] && mode_knob_pressed[2];
 
-    if (reset_combo && !boot_hold_active) {
-        boot_hold_active = true;
-        boot_hold_timer  = timer_read();
+    if (reset_combo && !reset_combo_latched) {
+        reset_combo_latched = true;
+        reset_combo_timer   = timer_read();
         dictation_knob_held = false;
         if (dictation_held) {
             unregister_code16(S(KC_F24));
             dictation_held = false;
         }
         rgblight_setrgb(255, 0, 0);
-    } else if (reset_combo && timer_elapsed(boot_hold_timer) >= 4000) {
+    } else if (reset_combo && timer_elapsed(reset_combo_timer) >= 2000) {
         bootloader_jump();
-    } else if (!reset_combo && boot_hold_active) {
-        boot_hold_active = false;
-        paint_layer(get_highest_layer(layer_state));
     }
 
     /* Hold the bottom knob to dictate globally; tap it to select Herdr mode. */
-    if (!boot_hold_active && dictation_knob_held && !dictation_held && timer_elapsed(dictation_timer) >= 350) {
+    if (!reset_combo_latched && dictation_knob_held && !dictation_held && timer_elapsed(dictation_timer) >= 350) {
         dictation_held = true;
         register_code16(S(KC_F24));
     }
