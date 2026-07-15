@@ -80,21 +80,20 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
     return false;
 }
 
-static void paint_mode(uint8_t red, uint8_t green, uint8_t blue, uint8_t active) {
-    /* Bathe the whole deck in the mode color, with its selector brightest. */
+static void paint_mode(uint8_t red, uint8_t green, uint8_t blue) {
+    /* Make the active mode unmistakable: all three zones use one solid color. */
     for (uint8_t index = 0; index < 3; index++) {
-        rgblight_setrgb_at(red / 10, green / 10, blue / 10, index);
+        rgblight_setrgb_at(red, green, blue, index);
     }
-    rgblight_setrgb_at(red, green, blue, active);
 }
 
 static void paint_layer(uint8_t layer) {
     if (layer == _CODEX) {
-        paint_mode(0, 110, 255, 0);     /* blue */
+        paint_mode(0, 110, 255);     /* blue */
     } else if (layer == _MEDIA) {
-        paint_mode(255, 90, 0, 1);      /* amber */
+        paint_mode(255, 90, 0);      /* amber */
     } else {
-        paint_mode(0, 210, 90, 2);      /* Herdr green */
+        paint_mode(0, 210, 90);      /* Herdr green */
     }
 }
 

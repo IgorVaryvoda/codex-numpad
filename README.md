@@ -7,12 +7,14 @@ while giving every other control a real job.
 
 ![Codex Deck layout](docs/layout.svg)
 
+**[Open the complete quick reference](docs/quick-reference.md)** for every key,
+knob gesture, mode color, and reset control on one page.
+
 ## The three modes
 
-Press one of the three encoder knobs to select a mode. The whole deck takes on
-the mode color, with its selector brightest: top/blue for **Codex**,
-middle/amber for **Media**, and bottom/green for **Herdr**. Turning the bottom
-knob always controls volume, regardless of mode.
+Press one of the three encoder knobs to select a mode. All three LEDs use one
+solid mode color: blue for **Codex**, amber for **Media**, and green for
+**Herdr**. Turning the bottom knob always controls volume, regardless of mode.
 
 ### Codex mode (blue)
 
@@ -104,11 +106,11 @@ Flash after putting the SPIN into its ATmega32U4 bootloader:
 make flash
 ```
 
-For the first install, when the flasher starts waiting, use the board's physical
-reset control (or briefly bridge `RST` and `GND`) to enter the bootloader. Once
-this firmware is installed, holding all three knobs for two seconds enters the
-bootloader; all LEDs turn red first. The helper resets the board back into the
-deck firmware after a successful write.
+For the first install, when the flasher starts waiting, press the SPIN's tiny
+side-mounted reset button directly underneath the USB-C connector. Once this
+firmware is installed, hold all three knobs for two seconds instead; all LEDs
+turn red before the board enters the bootloader. The flash helper returns the
+board to the deck firmware after a successful write.
 
 ## Development
 
