@@ -81,10 +81,10 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
 }
 
 static void paint_mode(uint8_t red, uint8_t green, uint8_t blue) {
-    /* Make the active mode unmistakable: all three zones use one solid color. */
-    for (uint8_t index = 0; index < 3; index++) {
-        rgblight_setrgb_at(red, green, blue, index);
-    }
+    /* Stop any saved animation from repainting individual LEDs after this call. */
+    rgblight_enable_noeeprom();
+    rgblight_mode_noeeprom(RGBLIGHT_MODE_STATIC_LIGHT);
+    rgblight_setrgb(red, green, blue);
 }
 
 static void paint_layer(uint8_t layer) {
