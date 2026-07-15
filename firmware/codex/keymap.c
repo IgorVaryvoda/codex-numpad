@@ -80,21 +80,30 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
     return false;
 }
 
-static void paint_mode(uint8_t red, uint8_t green, uint8_t blue) {
-    /* Stop any saved animation from repainting individual LEDs after this call. */
-    rgblight_enable_noeeprom();
-    rgblight_mode_noeeprom(RGBLIGHT_MODE_STATIC_LIGHT);
-    rgblight_setrgb(red, green, blue);
-}
+const rgblight_segment_t PROGMEM codex_rgb_layer[] = RGBLIGHT_LAYER_SEGMENTS(
+    {0, RGBLIGHT_LED_COUNT, HSV_BLUE}
+);
+const rgblight_segment_t PROGMEM media_rgb_layer[] = RGBLIGHT_LAYER_SEGMENTS(
+    {0, RGBLIGHT_LED_COUNT, HSV_ORANGE}
+);
+const rgblight_segment_t PROGMEM herdr_rgb_layer[] = RGBLIGHT_LAYER_SEGMENTS(
+    {0, RGBLIGHT_LED_COUNT, HSV_GREEN}
+);
+const rgblight_segment_t PROGMEM reset_rgb_layer[] = RGBLIGHT_LAYER_SEGMENTS(
+    {0, RGBLIGHT_LED_COUNT, HSV_RED}
+);
+const rgblight_segment_t *const PROGMEM mode_rgb_layers[] = RGBLIGHT_LAYERS_LIST(
+    codex_rgb_layer,
+    media_rgb_layer,
+    herdr_rgb_layer,
+    reset_rgb_layer
+);
 
 static void paint_layer(uint8_t layer) {
-    if (layer == _CODEX) {
-        paint_mode(0, 110, 255);     /* blue */
-    } else if (layer == _MEDIA) {
-        paint_mode(255, 90, 0);      /* amber */
-    } else {
-        paint_mode(0, 210, 90);      /* Herdr green */
-    }
+    rgblight_set_layer_state(3, false);
+    rgblight_set_layer_state(0, layer == _CODEX);
+    rgblight_set_layer_state(1, layer == _MEDIA);
+    rgblight_set_layer_state(2, layer == _HERDR);
 }
 
 static bool     mode_knob_pressed[3] = {false, false, false};
@@ -103,6 +112,7 @@ static uint16_t reset_combo_timer    = 0;
 static bool     dictation_knob_held = false;
 static bool     dictation_held   = false;
 static uint16_t dictation_timer  = 0;
+static uint8_t  dictation_return_layer = _CODEX;
 
 static int8_t mode_knob_index(uint16_t keycode) {
     switch (keycode) {
@@ -121,7 +131,13 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     if (record->event.pressed) {
         mode_knob_pressed[knob] = true;
-        if (knob == 2) {
+        if (knob == 0) {
+            layer_move(_CODEX);
+        } else if (knob == 1) {
+            layer_move(_MEDIA);
+        } else {
+            dictation_return_layer = get_highest_layer(layer_state);
+            layer_move(_HERDR);
             dictation_knob_held = true;
             dictation_held      = false;
             dictation_timer     = timer_read();
@@ -138,12 +154,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             return false;
         }
 
-        if (knob == 0) {
-            layer_move(_CODEX);
-            return false;
-        }
-        if (knob == 1) {
-            layer_move(_MEDIA);
+        if (knob != 2) {
             return false;
         }
 
@@ -151,8 +162,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         if (dictation_held) {
             unregister_code16(S(KC_F24));
             dictation_held = false;
-        } else {
-            layer_move(_HERDR);
+            layer_move(dictation_return_layer);
         }
     }
     return false;
@@ -170,7 +180,7 @@ void matrix_scan_user(void) {
             unregister_code16(S(KC_F24));
             dictation_held = false;
         }
-        rgblight_setrgb(255, 0, 0);
+        rgblight_set_layer_state(3, true);
     } else if (reset_combo && timer_elapsed(reset_combo_timer) >= 2000) {
         bootloader_jump();
     }
@@ -183,6 +193,9 @@ void matrix_scan_user(void) {
 }
 
 void keyboard_post_init_user(void) {
+    rgblight_layers = mode_rgb_layers;
+    rgblight_enable_noeeprom();
+    rgblight_mode_noeeprom(RGBLIGHT_MODE_STATIC_LIGHT);
     paint_layer(_CODEX);
 }
 
