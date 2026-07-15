@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07131f"/>
+      <stop offset="1" stop-color="#11182a"/>
+    </linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-opacity=".35"/></filter>
+    <style>
+      .title{font:700 40px system-ui,sans-serif;fill:#f6f8ff}.sub{font:500 18px system-ui,sans-serif;fill:#9fb0c7}
+      .key{fill:#18283a;stroke:#2c4963;stroke-width:2}.kt{font:700 17px system-ui,sans-serif;fill:#fff;text-anchor:middle}.ks{font:500 13px system-ui,sans-serif;fill:#8fcfff;text-anchor:middle}
+      .knob{fill:#0d1722;stroke-width:10}.mode{font:700 15px system-ui,sans-serif;fill:#fff;text-anchor:middle}.legend{font:600 16px system-ui,sans-serif;fill:#dbe8f7}
+    </style>
+  </defs>
+  <rect width="1200" height="760" rx="32" fill="url(#bg)"/>
+  <text x="70" y="74" class="title">CODEX + HERDR DECK · DMQ SPIN</text>
+  <text x="70" y="108" class="sub">Press a knob to change mode · turn knobs for the actions shown on the right</text>
+
+  <g filter="url(#shadow)">
+    <rect x="65" y="150" width="720" height="530" rx="34" fill="#0b1724" stroke="#20364b" stroke-width="3"/>
+  </g>
+
+  <!-- 3 × 4 Codex key grid -->
+  <g>
+    <g transform="translate(105 185)"><rect class="key" width="170" height="95" rx="18"/><text class="kt" x="85" y="42">FOCUS</text><text class="ks" x="85" y="68">summon Codex</text></g>
+    <g transform="translate(295 185)"><rect class="key" width="170" height="95" rx="18"/><text class="kt" x="85" y="42">NEW</text><text class="ks" x="85" y="68">new task</text></g>
+    <g transform="translate(485 185)"><rect class="key" width="170" height="95" rx="18"/><text class="kt" x="85" y="42">SEARCH</text><text class="ks" x="85" y="68">all tasks</text></g>
+
+    <g transform="translate(105 300)"><rect class="key" width="170" height="95" rx="18"/><text class="kt" x="85" y="42">BACK</text><text class="ks" x="85" y="68">history</text></g>
+    <g transform="translate(295 300)"><rect class="key" width="170" height="95" rx="18"/><text class="kt" x="85" y="42">QUICK</text><text class="ks" x="85" y="68">Quick Chat</text></g>
+    <g transform="translate(485 300)"><rect class="key" width="170" height="95" rx="18"/><text class="kt" x="85" y="42">FORWARD</text><text class="ks" x="85" y="68">history</text></g>
+
+    <g transform="translate(105 415)"><rect class="key" width="170" height="95" rx="18"/><text class="kt" x="85" y="42">PREV TASK</text><text class="ks" x="85" y="68">Codex history</text></g>
+    <g transform="translate(295 415)"><rect class="key" width="170" height="95" rx="18"/><text class="kt" x="85" y="42">FIND</text><text class="ks" x="85" y="68">in current task</text></g>
+    <g transform="translate(485 415)"><rect class="key" width="170" height="95" rx="18"/><text class="kt" x="85" y="42">NEXT TASK</text><text class="ks" x="85" y="68">Codex history</text></g>
+
+    <g transform="translate(105 530)"><rect class="key" width="170" height="95" rx="18"/><text class="kt" x="85" y="42">TALK</text><text class="ks" x="85" y="68">dictation</text></g>
+    <g transform="translate(295 530)"><rect class="key" width="170" height="95" rx="18"/><text class="kt" x="85" y="42">CMD</text><text class="ks" x="85" y="68">command menu</text></g>
+    <g transform="translate(485 530)"><rect class="key" width="170" height="95" rx="18"/><text class="kt" x="85" y="42">ACT</text><text class="ks" x="85" y="68">Enter / approve</text></g>
+  </g>
+
+  <!-- Mode encoders -->
+  <g>
+    <circle cx="720" cy="232" r="40" class="knob" stroke="#006eff"/><text x="720" y="237" class="mode">CODEX</text>
+    <circle cx="720" cy="387" r="40" class="knob" stroke="#ff5a00"/><text x="720" y="392" class="mode">MEDIA</text>
+    <circle cx="720" cy="572" r="40" class="knob" stroke="#00d25a"/><text x="720" y="577" class="mode">HERDR</text>
+  </g>
+
+  <g transform="translate(845 175)">
+    <text class="title" font-size="27">CODEX KNOBS</text>
+    <text y="65" class="legend">Top · Hyprland workspaces</text>
+    <text y="105" class="legend">Middle · Hyprland windows</text>
+    <text y="145" class="legend">Bottom · volume (always)</text>
+    <text y="175" class="legend">Hold bottom · dictate globally</text>
+
+    <text y="225" class="title" font-size="27">MEDIA KNOBS</text>
+    <text y="275" class="legend">Top · screen brightness</text>
+    <text y="315" class="legend">Middle · seek media ±10 sec</text>
+    <text y="355" class="legend">Bottom · volume (always)</text>
+
+    <text y="435" class="title" font-size="27">HERDR MODE</text>
+    <text y="485" class="legend">Top · Herdr workspaces</text>
+    <text y="525" class="legend">Middle · Herdr tabs</text>
+    <text y="565" class="legend">Keys · panes · agents · splits</text>
+  </g>
+</svg>

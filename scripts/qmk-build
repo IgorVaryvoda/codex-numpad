@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+QMK_SOURCE="${QMK_SOURCE:-$HOME/qmk_firmware}"
+QMK_BUILD_HOME="${QMK_BUILD_HOME:-$ROOT/.build/qmk}"
+QMK_REF="${QMK_REF:-master}"
+KEYMAP_LINK="$QMK_BUILD_HOME/keyboards/dmqdesign/spin/keymaps/codex"
+ACTION="${1:-build}"
+
+[[ -d "$QMK_SOURCE/.git" ]] || {
+    printf 'QMK source repository not found: %s\n' "$QMK_SOURCE" >&2
+    exit 1
+}
+
+mkdir -p "$(dirname "$QMK_BUILD_HOME")"
+
+if [[ ! -e "$QMK_BUILD_HOME/.git" ]]; then
+    git -C "$QMK_SOURCE" rev-parse --verify "$QMK_REF" >/dev/null
+    git -C "$QMK_SOURCE" worktree add --detach "$QMK_BUILD_HOME" "$QMK_REF"
+fi
+
+for _ in 1 2 3; do
+    git -C "$QMK_BUILD_HOME" submodule update --init --recursive --force --quiet || true
+    if [[ -f "$QMK_BUILD_HOME/lib/lufa/LUFA/makefile" && -f "$QMK_BUILD_HOME/lib/printf/src/printf/printf.c" ]]; then
+        break
+    fi
+done
+
+[[ -f "$QMK_BUILD_HOME/lib/lufa/LUFA/makefile" && -f "$QMK_BUILD_HOME/lib/printf/src/printf/printf.c" ]] || {
+    printf 'QMK submodules did not initialize after three attempts.\n' >&2
+    exit 1
+}
+ln -sfn "$ROOT/firmware/codex" "$KEYMAP_LINK"
+
+case "$ACTION" in
+    build)
+        make -C "$QMK_BUILD_HOME" dmqdesign/spin:codex
+        mkdir -p "$ROOT/dist"
+        install -m 0644 "$QMK_BUILD_HOME/dmqdesign_spin_codex.hex" "$ROOT/dist/dmqdesign_spin_codex.hex"
+        printf '\nFirmware: %s\n' "$ROOT/dist/dmqdesign_spin_codex.hex"
+        ;;
+    flash)
+        make -C "$QMK_BUILD_HOME" dmqdesign/spin:codex:flash
+        # QMK's DFU target writes the image but can leave this ATmega32U4 in
+        # bootloader mode. Return it to the application when that device is
+        # still present after a successful flash.
+        if command -v lsusb >/dev/null 2>&1 \
+            && lsusb | grep -q '03eb:2ff4'; then
+            dfu-programmer atmega32u4 reset
+        fi
+        ;;
+    *)
+        printf 'Usage: %s [build|flash]\n' "$0" >&2
+        exit 2
+        ;;
+esac

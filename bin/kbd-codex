@@ -1,0 +1,219 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+APP_CLASS="${KBD_CODEX_APP_CLASS:-codex-desktop}"
+APP_EXEC="${KBD_CODEX_APP_EXEC:-codex-desktop}"
+DRY_RUN="${KBD_CODEX_DRY_RUN:-0}"
+NOTIFICATIONS="${KBD_CODEX_NOTIFY:-1}"
+
+die() {
+    printf 'kbd-codex: %s\n' "$*" >&2
+    if [[ "$DRY_RUN" != 1 ]] && command -v notify-send >/dev/null 2>&1; then
+        notify-send -a 'Codex Deck' -u critical 'Codex Deck' "$*" || true
+    fi
+    exit 1
+}
+
+announce() {
+    local message="$1"
+    [[ "$NOTIFICATIONS" == 1 && "$DRY_RUN" != 1 ]] || return 0
+    command -v notify-send >/dev/null 2>&1 || return 0
+    notify-send \
+        -a 'Codex Deck' \
+        -i codex-desktop \
+        -h string:x-canonical-private-synchronous:kbd-codex \
+        -t 900 \
+        'Codex Deck' "$message" || true
+}
+
+codex_address() {
+    hyprctl clients -j | jq -r --arg class "$APP_CLASS" \
+        'first(.[] | select(.class == $class or .initialClass == $class) | .address) // empty'
+}
+
+codex_is_active() {
+    hyprctl activewindow -j | jq -e --arg class "$APP_CLASS" \
+        '.class == $class or .initialClass == $class' >/dev/null
+}
+
+focus_codex() {
+    if [[ "$DRY_RUN" == 1 ]]; then
+        printf 'FOCUS %s\n' "$APP_CLASS"
+        return 0
+    fi
+
+    local address
+    address="$(codex_address)"
+
+    if [[ -z "$address" ]]; then
+        command -v "$APP_EXEC" >/dev/null 2>&1 || die "Cannot find $APP_EXEC"
+        nohup "$APP_EXEC" >/dev/null 2>&1 &
+
+        for _ in {1..50}; do
+            sleep 0.1
+            address="$(codex_address)"
+            [[ -n "$address" ]] && break
+        done
+    fi
+
+    [[ -n "$address" ]] || die 'Codex did not open within five seconds'
+    hyprctl dispatch focuswindow "address:$address" >/dev/null
+
+    for _ in {1..12}; do
+        codex_is_active && return 0
+        sleep 0.05
+    done
+
+    die 'Refusing to type because Codex did not receive focus'
+}
+
+emit_keys() {
+    focus_codex
+    if [[ "$DRY_RUN" == 1 ]]; then
+        printf 'KEYS'
+        printf ' %s' "$@"
+        printf '\n'
+    else
+        ydotool key --key-delay 8 "$@"
+    fi
+}
+
+open_codex_uri() {
+    local uri="$1"
+    if [[ "$DRY_RUN" == 1 ]]; then
+        printf 'OPEN %s\n' "$uri"
+    else
+        xdg-open "$uri" >/dev/null 2>&1 &
+    fi
+}
+
+type_prompt() {
+    local prompt="$1"
+    focus_codex
+    if [[ "$DRY_RUN" == 1 ]]; then
+        printf 'TYPE %s\n' "$prompt"
+    else
+        ydotool type --key-delay 2 -- "$prompt"
+    fi
+}
+
+ctrl_key() {
+    emit_keys 29:1 "$1:1" "$1:0" 29:0
+}
+
+ctrl_shift_key() {
+    emit_keys 29:1 42:1 "$1:1" "$1:0" 42:0 29:0
+}
+
+ctrl_alt_key() {
+    emit_keys 29:1 56:1 "$1:1" "$1:0" 56:0 29:0
+}
+
+hypr_dispatch() {
+    local dispatcher="$1"
+    shift
+    if [[ "$DRY_RUN" == 1 ]]; then
+        printf 'HYPR %s' "$dispatcher"
+        if (( $# > 0 )); then
+            printf ' %s' "$@"
+        fi
+        printf '\n'
+    else
+        hyprctl dispatch "$dispatcher" "$@" >/dev/null
+    fi
+}
+
+media_seek() {
+    local offset="$1"
+    if [[ "$DRY_RUN" == 1 ]]; then
+        printf 'MEDIA seek %s\n' "$offset"
+    else
+        playerctl position "$offset" >/dev/null 2>&1 || die 'No seekable media player is active'
+    fi
+}
+
+doctor() {
+    local failed=0
+    local command
+
+    for command in hyprctl jq ydotool xdg-open playerctl codex-desktop; do
+        if command -v "$command" >/dev/null 2>&1; then
+            printf 'ok   %-18s %s\n' "$command" "$(command -v "$command")"
+        else
+            printf 'MISS %-18s required\n' "$command"
+            failed=1
+        fi
+    done
+
+    if [[ -e /dev/input/by-id/usb-DMQ_Design_SPIN-event-kbd ]]; then
+        printf 'ok   %-18s connected\n' 'DMQ SPIN'
+    else
+        printf 'MISS %-18s not connected\n' 'DMQ SPIN'
+        failed=1
+    fi
+
+    if [[ -n "$(codex_address 2>/dev/null || true)" ]]; then
+        printf 'ok   %-18s running\n' 'Codex Desktop'
+    else
+        printf 'info %-18s will launch on demand\n' 'Codex Desktop'
+    fi
+
+    return "$failed"
+}
+
+usage() {
+    cat <<'EOF'
+Usage: kbd-codex ACTION
+
+Codex:   focus new search back quick forward find dictate command act previous next
+Desktop: workspace-prev workspace-next window-prev window-next
+Media:   seek-back seek-forward
+Legacy:  review terminal sidebar go-on finish fix plan review-fix test-fix status
+         explain docs commit ship
+Utility: doctor
+EOF
+}
+
+action="${1:-}"
+case "$action" in
+    focus)            focus_codex; announce 'Codex focused' ;;
+    new)              open_codex_uri 'codex://threads/new'; announce 'New task' ;;
+    search)           ctrl_key 34; announce 'Search tasks' ;;                    # G
+    back)             ctrl_key 26; announce 'Back' ;;                            # [
+    quick)            ctrl_alt_key 49; announce 'Quick Chat' ;;                   # N
+    forward)          ctrl_key 27; announce 'Forward' ;;                          # ]
+    find)             ctrl_key 33; announce 'Find in task' ;;                     # F
+    review)           ctrl_shift_key 34; announce 'Review tab' ;;                 # G
+    terminal)         ctrl_key 41; announce 'Terminal' ;;                         # `
+    sidebar)          ctrl_key 48; announce 'Sidebar' ;;                          # B
+    dictate)          ctrl_shift_key 32; announce 'Dictation' ;;                  # D
+    command)          ctrl_shift_key 25; announce 'Command menu' ;;               # P
+    act)              emit_keys 28:1 28:0; announce 'Enter / act' ;;
+    previous)         ctrl_shift_key 26 ;;                                         # [
+    next)             ctrl_shift_key 27 ;;                                         # ]
+    workspace-prev)   hypr_dispatch workspace 'e-1' ;;
+    workspace-next)   hypr_dispatch workspace 'e+1' ;;
+    window-prev)      hypr_dispatch cyclenext prev ;;
+    window-next)      hypr_dispatch cyclenext ;;
+    seek-back)        media_seek '10-' ;;
+    seek-forward)     media_seek '10+' ;;
+    scroll-up)        emit_keys 104:1 104:0 ;;                                     # Page Up
+    scroll-down)      emit_keys 109:1 109:0 ;;                                     # Page Down
+    zoom-out)         ctrl_key 12 ;;                                               # -
+    zoom-in)          ctrl_key 13 ;;                                               # = / +
+    go-on)            type_prompt 'Go on. Continue from the current state and finish the task.'; announce 'Continue prompt' ;;
+    finish)           type_prompt 'Finish this end to end. Verify it before reporting back.'; announce 'Finish prompt' ;;
+    fix)              type_prompt 'Diagnose the current failure, implement the fix, and verify it.'; announce 'Fix prompt' ;;
+    plan)             type_prompt 'Make a concise implementation plan, then execute it.'; announce 'Plan prompt' ;;
+    review-fix)       type_prompt 'Review the current changes for bugs, regressions, and missing tests. Fix any issues you find.'; announce 'Review prompt' ;;
+    test-fix)         type_prompt 'Run the relevant tests and fix any failures.'; announce 'Test prompt' ;;
+    status)           type_prompt 'Give me a concise status update: what is done, what remains, and any blockers.'; announce 'Status prompt' ;;
+    explain)          type_prompt 'Explain the current implementation and the key tradeoffs.'; announce 'Explain prompt' ;;
+    docs)             type_prompt 'Update the relevant documentation to match the current behavior.'; announce 'Docs prompt' ;;
+    commit)           type_prompt 'Commit the current scoped changes with a clear conventional commit message. Keep unrelated work untouched.'; announce 'Commit prompt' ;;
+    ship)             type_prompt 'Commit and push the current scoped changes. Keep unrelated work untouched and verify the remote handoff.'; announce 'Ship prompt' ;;
+    doctor)           doctor ;;
+    -h|--help|help)   usage ;;
+    '')               usage; exit 2 ;;
+    *)                usage >&2; die "Unknown action: $action" ;;
+esac

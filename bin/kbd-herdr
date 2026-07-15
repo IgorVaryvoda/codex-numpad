@@ -1,0 +1,202 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DRY_RUN="${KBD_HERDR_DRY_RUN:-0}"
+GHOSTTY_CLASS="${KBD_HERDR_APP_CLASS:-com.mitchellh.ghostty}"
+
+die() {
+    printf 'kbd-herdr: %s\n' "$*" >&2
+    if [[ "$DRY_RUN" != 1 ]] && command -v notify-send >/dev/null 2>&1; then
+        notify-send -a 'Herdr Deck' -u critical 'Herdr Deck' "$*" || true
+    fi
+    exit 1
+}
+
+herdr_address() {
+    hyprctl clients -j | jq -r --arg class "$GHOSTTY_CLASS" '
+        first(
+            .[]
+            | select(.class == $class or .initialClass == $class)
+            | select((.title // "") | ascii_downcase | contains("herdr"))
+            | .address
+        ) // empty
+    '
+}
+
+focus_herdr() {
+    if [[ "$DRY_RUN" == 1 ]]; then
+        printf 'FOCUS herdr\n'
+        return
+    fi
+
+    local address
+    address="$(herdr_address)"
+    if [[ -z "$address" ]]; then
+        command -v ghostty >/dev/null 2>&1 || die 'Ghostty is required to open Herdr'
+        nohup ghostty -e herdr >/dev/null 2>&1 &
+        for _ in {1..50}; do
+            sleep 0.1
+            address="$(herdr_address)"
+            [[ -n "$address" ]] && break
+        done
+    fi
+
+    [[ -n "$address" ]] || die 'Herdr did not open within five seconds'
+    hyprctl dispatch focuswindow "address:$address" >/dev/null
+}
+
+dry_action() {
+    local action="$1"
+    [[ "$DRY_RUN" == 1 ]] || return 1
+    focus_herdr
+    printf 'HERDR %s\n' "$action"
+}
+
+cycle_json_list() {
+    local kind="$1"
+    local direction="$2"
+    local json current count target
+    local -a ids
+
+    dry_action "$kind-$([[ "$direction" == -1 ]] && printf prev || printf next)" && return
+    focus_herdr
+
+    case "$kind" in
+        workspace)
+            json="$(herdr workspace list)"
+            mapfile -t ids < <(jq -r '.result.workspaces[].workspace_id' <<<"$json")
+            current="$(jq -r '.result.workspaces | to_entries[] | select(.value.focused) | .key' <<<"$json")"
+            ;;
+        tab)
+            local pane workspace
+            pane="$(herdr pane current)"
+            workspace="$(jq -r '.result.pane.workspace_id' <<<"$pane")"
+            json="$(herdr tab list --workspace "$workspace")"
+            mapfile -t ids < <(jq -r '.result.tabs[].tab_id' <<<"$json")
+            current="$(jq -r '.result.tabs | to_entries[] | select(.value.focused) | .key' <<<"$json")"
+            ;;
+        agent)
+            json="$(herdr agent list)"
+            mapfile -t ids < <(jq -r '.result.agents[].terminal_id' <<<"$json")
+            current="$(jq -r '.result.agents | to_entries[] | select(.value.focused) | .key' <<<"$json")"
+            ;;
+        *) die "Unknown cycle kind: $kind" ;;
+    esac
+
+    count="${#ids[@]}"
+    (( count > 0 )) || die "No Herdr ${kind}s are available"
+    [[ "$current" =~ ^[0-9]+$ ]] || current=0
+    target=$(( (current + direction + count) % count ))
+
+    case "$kind" in
+        workspace) herdr workspace focus "${ids[$target]}" >/dev/null ;;
+        tab)       herdr tab focus "${ids[$target]}" >/dev/null ;;
+        agent)     herdr agent focus "${ids[$target]}" >/dev/null ;;
+    esac
+}
+
+current_context() {
+    herdr pane current
+}
+
+new_workspace() {
+    dry_action new-workspace && return
+    focus_herdr
+    local pane cwd
+    pane="$(current_context)"
+    cwd="$(jq -r '.result.pane.foreground_cwd // .result.pane.cwd // empty' <<<"$pane")"
+    if [[ -n "$cwd" ]]; then
+        herdr workspace create --cwd "$cwd" --focus >/dev/null
+    else
+        herdr workspace create --focus >/dev/null
+    fi
+}
+
+new_tab() {
+    dry_action new-tab && return
+    focus_herdr
+    local pane workspace cwd
+    pane="$(current_context)"
+    workspace="$(jq -r '.result.pane.workspace_id' <<<"$pane")"
+    cwd="$(jq -r '.result.pane.foreground_cwd // .result.pane.cwd // empty' <<<"$pane")"
+    if [[ -n "$cwd" ]]; then
+        herdr tab create --workspace "$workspace" --cwd "$cwd" --focus >/dev/null
+    else
+        herdr tab create --workspace "$workspace" --focus >/dev/null
+    fi
+}
+
+pane_focus() {
+    local direction="$1"
+    dry_action "pane-$direction" && return
+    focus_herdr
+    herdr pane focus --direction "$direction" --current >/dev/null
+}
+
+split_pane() {
+    local direction="$1"
+    dry_action "split-$direction" && return
+    focus_herdr
+    herdr pane split --current --direction "$direction" --focus >/dev/null
+}
+
+zoom_pane() {
+    dry_action zoom && return
+    focus_herdr
+    herdr pane zoom --current --toggle >/dev/null
+}
+
+doctor() {
+    local failed=0 command
+    for command in herdr hyprctl jq ghostty; do
+        if command -v "$command" >/dev/null 2>&1; then
+            printf 'ok   %-18s %s\n' "$command" "$(command -v "$command")"
+        else
+            printf 'MISS %-18s required\n' "$command"
+            failed=1
+        fi
+    done
+    if herdr status server --json 2>/dev/null | jq -e '.running' >/dev/null; then
+        printf 'ok   %-18s running\n' 'Herdr server'
+    else
+        printf 'info %-18s will launch on demand\n' 'Herdr server'
+    fi
+    return "$failed"
+}
+
+usage() {
+    cat <<'EOF'
+Usage: kbd-herdr ACTION
+
+Window:     focus
+Create:     new-workspace new-tab split-right split-down
+Navigate:   workspace-prev workspace-next tab-prev tab-next
+            agent-prev agent-next pane-left pane-right pane-up pane-down
+Pane:       zoom
+Utility:    doctor
+EOF
+}
+
+action="${1:-}"
+case "$action" in
+    focus)          focus_herdr ;;
+    new-workspace)  new_workspace ;;
+    new-tab)        new_tab ;;
+    workspace-prev) cycle_json_list workspace -1 ;;
+    workspace-next) cycle_json_list workspace 1 ;;
+    tab-prev)       cycle_json_list tab -1 ;;
+    tab-next)       cycle_json_list tab 1 ;;
+    agent-prev)     cycle_json_list agent -1 ;;
+    agent-next)     cycle_json_list agent 1 ;;
+    pane-left)      pane_focus left ;;
+    pane-right)     pane_focus right ;;
+    pane-up)        pane_focus up ;;
+    pane-down)      pane_focus down ;;
+    split-right)    split_pane right ;;
+    split-down)     split_pane down ;;
+    zoom)           zoom_pane ;;
+    doctor)         doctor ;;
+    -h|--help|help) usage ;;
+    '')             usage; exit 2 ;;
+    *)              usage >&2; die "Unknown action: $action" ;;
+esac

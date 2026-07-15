@@ -1,0 +1,4 @@
+.Codex/
+.build/
+.runtime/
+dist/*.hex

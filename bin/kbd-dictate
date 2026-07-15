@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SELF="$(readlink -f "${BASH_SOURCE[0]}")"
+ROOT="$(cd "$(dirname "$SELF")/.." && pwd)"
+STATE_DIR="${XDG_RUNTIME_DIR:-/tmp}/kbd-dictate-${UID}"
+PID_FILE="$STATE_DIR/recording.pid"
+RAW_FILE="$STATE_DIR/recording.raw"
+AUDIO_FILE="$STATE_DIR/recording.wav"
+TEXT_BASE="$STATE_DIR/transcript"
+WHISPER_BIN="${KBD_DICTATE_WHISPER_BIN:-$ROOT/.runtime/whisper.cpp/build/bin/whisper-cli}"
+MODEL_NAME="${KBD_DICTATE_MODEL:-base.en}"
+MODEL="${KBD_DICTATE_MODEL_PATH:-$ROOT/.runtime/whisper.cpp/models/ggml-$MODEL_NAME.bin}"
+DRY_RUN="${KBD_DICTATE_DRY_RUN:-0}"
+
+notify() {
+    [[ "$DRY_RUN" != 1 ]] || return 0
+    command -v notify-send >/dev/null 2>&1 || return 0
+    notify-send -a 'Codex Deck Dictation' \
+        -h string:x-canonical-private-synchronous:kbd-dictate \
+        -t 1200 'Dictation' "$1" || true
+}
+
+die() {
+    printf 'kbd-dictate: %s\n' "$*" >&2
+    notify "$*"
+    exit 1
+}
+
+recording_pid() {
+    [[ -f "$PID_FILE" ]] || return 1
+    local pid
+    pid="$(<"$PID_FILE")"
+    [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null || return 1
+    printf '%s\n' "$pid"
+}
+
+microphone_source() {
+    if [[ -n "${KBD_DICTATE_SOURCE:-}" ]]; then
+        printf '%s\n' "$KBD_DICTATE_SOURCE"
+        return
+    fi
+
+    local source
+    source="$(pactl list short sources | awk '$2 ~ /Razer_Inc_Razer_Seiren_Mini/ { print $2; exit }')"
+    printf '%s\n' "${source:-@DEFAULT_SOURCE@}"
+}
+
+start_recording() {
+    if [[ "$DRY_RUN" == 1 ]]; then
+        printf 'DICTATE start\n'
+        return
+    fi
+    recording_pid >/dev/null 2>&1 && return 0
+    command -v parec >/dev/null 2>&1 || die 'parec is required'
+    [[ -x "$WHISPER_BIN" && -f "$MODEL" ]] || die 'Run scripts/setup-dictation first'
+
+    mkdir -p "$STATE_DIR"
+    rm -f "$RAW_FILE" "$AUDIO_FILE" "$TEXT_BASE.txt"
+    parec \
+        --device="$(microphone_source)" \
+        --format=s16le \
+        --rate=16000 \
+        --channels=1 \
+        --latency-msec=20 \
+        --process-time-msec=20 \
+        >"$RAW_FILE" 2>/dev/null &
+    printf '%s\n' "$!" > "$PID_FILE"
+    notify 'Listening… release to transcribe'
+}
+
+stop_recording() {
+    if [[ "$DRY_RUN" == 1 ]]; then
+        printf 'DICTATE stop\n'
+        return
+    fi
+
+    local pid
+    pid="$(recording_pid)" || return 0
+    kill -TERM "$pid" 2>/dev/null || true
+    for _ in {1..30}; do
+        kill -0 "$pid" 2>/dev/null || break
+        sleep 0.05
+    done
+    kill -KILL "$pid" 2>/dev/null || true
+    rm -f "$PID_FILE"
+
+    [[ -s "$RAW_FILE" ]] || die 'No microphone audio was captured'
+    ffmpeg -loglevel error -y \
+        -f s16le -ar 16000 -ac 1 -i "$RAW_FILE" "$AUDIO_FILE" \
+        || die 'Could not prepare microphone audio'
+    notify 'Transcribing locally…'
+    "$WHISPER_BIN" \
+        --model "$MODEL" \
+        --file "$AUDIO_FILE" \
+        --language en \
+        --no-timestamps \
+        --output-txt \
+        --output-file "$TEXT_BASE" \
+        --threads "$(nproc)" \
+        >/dev/null 2>&1 || die 'Local transcription failed'
+
+    local transcript
+    [[ -f "$TEXT_BASE.txt" ]] || {
+        notify 'No speech detected'
+        return 0
+    }
+    transcript="$(sed -E \
+        -e '/^[[:space:]]*\[(BLANK_AUDIO|Silence|Music)\][[:space:]]*$/d' \
+        -e 's/^[[:space:]]+//' \
+        -e 's/[[:space:]]+$//' \
+        "$TEXT_BASE.txt" | paste -sd' ' -)"
+    [[ -n "$transcript" ]] || {
+        notify 'No speech detected'
+        return 0
+    }
+
+    ydotool type --key-delay 1 -- "$transcript"
+    notify 'Transcribed'
+}
+
+case "${1:-}" in
+    start)  start_recording ;;
+    stop)   stop_recording ;;
+    toggle)
+        if recording_pid >/dev/null 2>&1; then
+            stop_recording
+        else
+            start_recording
+        fi
+        ;;
+    status)
+        recording_pid >/dev/null 2>&1 && printf 'recording\n' || printf 'idle\n'
+        ;;
+    *) printf 'Usage: %s {start|stop|toggle|status}\n' "$0" >&2; exit 2 ;;
+esac
