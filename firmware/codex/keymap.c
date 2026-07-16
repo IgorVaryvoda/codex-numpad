@@ -2,9 +2,10 @@
  * Codex Deck keymap for the DMQ Design SPIN.
  *
  * The firmware emits otherwise-unused F13-F24 chords: plain in Codex mode,
- * Shift in the Codex prompt bank, and Alt in Herdr mode. Hyprland turns those
- * signals into app-aware actions. This keeps the board useful in every app
- * and avoids baking desktop-specific commands into QMK.
+ * Shift in the Codex prompt bank, Alt in Herdr mode, and Shift+Alt in the
+ * Herdr prompt bank. Hyprland turns those signals into app-aware actions.
+ * This keeps the board useful in every app and avoids baking
+ * desktop-specific commands into QMK.
  */
 #include QMK_KEYBOARD_H
 
@@ -13,6 +14,7 @@ enum layers {
     _MEDIA,
     _HERDR,
     _PROMPTS,
+    _HERDR_PROMPTS,
 };
 
 enum custom_keycodes {
@@ -53,6 +55,16 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         S(KC_F19),    S(KC_F20),    S(KC_F21),    MODE_HERDR,
         S(KC_F22),    S(KC_F23),    KC_F24
     ),
+
+    /* Herdr prompt bank: tap the bottom knob again while in Herdr mode.
+     * Shift+Alt chords are free; the bottom-right key sends the typed
+     * prompt into the focused Herdr pane. */
+    [_HERDR_PROMPTS] = LAYOUT(
+        S(A(KC_F13)), S(A(KC_F14)), S(A(KC_F15)), MODE_CODEX,
+        S(A(KC_F16)), S(A(KC_F17)), S(A(KC_F18)), MODE_MEDIA,
+        S(A(KC_F19)), S(A(KC_F20)), S(A(KC_F21)), MODE_HERDR,
+        S(A(KC_F22)), S(A(KC_F23)), S(A(KC_F24))
+    ),
 };
 
 static void tap(uint16_t keycode) {
@@ -80,7 +92,7 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
         } else if (index == 1) { /* physical middle */
             tap(clockwise ? C(KC_F18) : C(KC_F17)); /* media seek */
         }
-    } else if (layer == _HERDR) {
+    } else if (layer == _HERDR || layer == _HERDR_PROMPTS) {
         if (index == 0) { /* physical top */
             tap(clockwise ? C(A(KC_F14)) : C(A(KC_F13))); /* workspace */
         } else if (index == 1) { /* physical middle */
@@ -103,6 +115,9 @@ const rgblight_segment_t PROGMEM herdr_rgb_layer[] = RGBLIGHT_LAYER_SEGMENTS(
 const rgblight_segment_t PROGMEM prompts_rgb_layer[] = RGBLIGHT_LAYER_SEGMENTS(
     {0, RGBLIGHT_LED_COUNT, HSV_CYAN}
 );
+const rgblight_segment_t PROGMEM herdr_prompts_rgb_layer[] = RGBLIGHT_LAYER_SEGMENTS(
+    {0, RGBLIGHT_LED_COUNT, HSV_CHARTREUSE}
+);
 const rgblight_segment_t PROGMEM reset_rgb_layer[] = RGBLIGHT_LAYER_SEGMENTS(
     {0, RGBLIGHT_LED_COUNT, HSV_RED}
 );
@@ -111,10 +126,11 @@ const rgblight_segment_t *const PROGMEM mode_rgb_layers[] = RGBLIGHT_LAYERS_LIST
     media_rgb_layer,
     herdr_rgb_layer,
     prompts_rgb_layer,
+    herdr_prompts_rgb_layer,
     reset_rgb_layer
 );
 
-#define RESET_RGB_LAYER 4
+#define RESET_RGB_LAYER 5
 
 static void paint_layer(uint8_t layer) {
     rgblight_set_layer_state(RESET_RGB_LAYER, false);
@@ -122,6 +138,7 @@ static void paint_layer(uint8_t layer) {
     rgblight_set_layer_state(1, layer == _MEDIA);
     rgblight_set_layer_state(2, layer == _HERDR);
     rgblight_set_layer_state(3, layer == _PROMPTS);
+    rgblight_set_layer_state(4, layer == _HERDR_PROMPTS);
 }
 
 static bool     mode_knob_pressed[3] = {false, false, false};
@@ -155,8 +172,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         } else if (knob == 1) {
             layer_move(_MEDIA);
         } else {
-            dictation_return_layer = get_highest_layer(layer_state);
-            layer_move(_HERDR);
+            const uint8_t current = get_highest_layer(layer_state);
+            dictation_return_layer = current;
+            /* A second bottom-knob press while in Herdr toggles the prompt
+             * bank; a hold still starts dictation from any mode. */
+            layer_move(current == _HERDR ? _HERDR_PROMPTS : _HERDR);
             dictation_knob_held = true;
             dictation_held      = false;
             dictation_timer     = timer_read();

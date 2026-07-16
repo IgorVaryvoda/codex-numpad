@@ -17,6 +17,7 @@
     --led-prompts: #19d3e0;
     --led-media: #ff7a1a;
     --led-herdr: #23d566;
+    --led-herdrprompts: #a4e043;
     --led-reset: #ff3b30;
     --led: var(--led-codex);
     --disp: "Bahnschrift", "Archivo Narrow", "Roboto Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
@@ -174,6 +175,7 @@
   .chip.prompts { --c: var(--led-prompts); }
   .chip.media   { --c: var(--led-media); }
   .chip.herdr   { --c: var(--led-herdr); }
+  .chip.herdrprompts { --c: var(--led-herdrprompts); }
   .chip.reset   { --c: var(--led-reset); }
 
   .panel h2 {
@@ -237,7 +239,7 @@
 </head>
 <body>
 <header>
-  <p class="eyebrow">DMQ Design SPIN · 12 keys · 3 knobs · one board, four lights</p>
+  <p class="eyebrow">DMQ Design SPIN · 12 keys · 3 knobs · one board, five lights</p>
   <h1>Codex Deck / <span class="mode-word" id="modeWord">Codex</span></h1>
 </header>
 
@@ -248,7 +250,7 @@
       <div class="knobs">
         <button class="knob" id="knobTop" title="Tap: Codex mode — tap again: prompt bank">top<small id="knobTopSub">codex</small></button>
         <button class="knob" id="knobMid" title="Tap: Media mode">mid<small>media</small></button>
-        <button class="knob" id="knobBot" title="Tap: Herdr mode — hold 350 ms: dictate">bottom<small>herdr</small></button>
+        <button class="knob" id="knobBot" title="Tap: Herdr mode — tap again: prompt bank — hold 350 ms: dictate">bottom<small id="knobBotSub">herdr</small></button>
       </div>
     </div>
   </section>
@@ -259,6 +261,7 @@
       <button class="chip prompts" data-mode="prompts" aria-pressed="false">Prompts</button>
       <button class="chip media"   data-mode="media"   aria-pressed="false">Media</button>
       <button class="chip herdr"   data-mode="herdr"   aria-pressed="false">Herdr</button>
+      <button class="chip herdrprompts" data-mode="herdrprompts" aria-pressed="false">Herdr prompts</button>
       <button class="chip reset"   data-mode="reset"   aria-pressed="false">Reset chord</button>
     </div>
 
@@ -281,7 +284,7 @@
 <footer>
   <h3>Flash</h3>
   <span><code>make build</code> → <code>make flash</code> → hold all three knobs through the red light until the board disconnects.</span>
-  <span>Keys 1–4 switch modes on this page. Prompt-bank keys show their full prompt on hover.</span>
+  <span>Keys 1–5 switch modes on this page. Prompt-bank keys show their full prompt on hover.</span>
 </footer>
 
 <script>
@@ -349,7 +352,31 @@
       ],
       knobs: [
         ["Top turn", "Previous / next Herdr workspace"],
-        ["Mid turn", "Previous / next Herdr tab"]
+        ["Mid turn", "Previous / next Herdr tab"],
+        ["Bot press", "Tap again for the chartreuse prompt bank"]
+      ]
+    },
+    herdrprompts: {
+      word: "Herdr prompts",
+      tag: "Chartreuse LEDs — your most-typed agent prompts, mined from real Codex and Claude history. Keys type without sending; Send presses Enter.",
+      keys: [
+        ["Plan", "write a plan…", "write a plan for this"],
+        ["Go on", "typed 300+ times", "go on"],
+        ["Do it", "approve", "do it"],
+        ["Fix all", "", "fix all"],
+        ["Autoreview", "", "run autoreview"],
+        ["Adversarial", "review", "do adversarial review"],
+        ["Status?", "poll the agent", "status?"],
+        ["Resume", "after context loss", "Continue from where you left off."],
+        ["Converge", "clanker army", "converge"],
+        ["Commit n push", "", "commit n push"],
+        ["Land it", "merge into dev", "land it"],
+        ["Send ⏎", "press Enter"]
+      ],
+      knobs: [
+        ["Top turn", "Previous / next Herdr workspace"],
+        ["Mid turn", "Previous / next Herdr tab"],
+        ["Bot press", "Tap again to return to Herdr"]
       ]
     },
     reset: {
@@ -368,7 +395,7 @@
     }
   };
 
-  const LED = { codex: "--led-codex", prompts: "--led-prompts", media: "--led-media", herdr: "--led-herdr", reset: "--led-reset" };
+  const LED = { codex: "--led-codex", prompts: "--led-prompts", media: "--led-media", herdr: "--led-herdr", herdrprompts: "--led-herdrprompts", reset: "--led-reset" };
   const keysEl = document.getElementById("keys");
   const rowsEl = document.getElementById("knobRows");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -382,6 +409,7 @@
     document.getElementById("modeTitle").textContent = m.word === "Reset" ? "Bootloader chord" : m.word + " mode";
     document.getElementById("modeTag").textContent = m.tag;
     document.getElementById("knobTopSub").textContent = mode === "codex" ? "prompts" : "codex";
+    document.getElementById("knobBotSub").textContent = mode === "herdr" ? "prompts" : "herdr";
     document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", String(c.dataset.mode === mode)));
 
     const paint = () => {
@@ -400,9 +428,9 @@
   document.querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => render(c.dataset.mode)));
   document.getElementById("knobTop").addEventListener("click", () => render(mode === "codex" ? "prompts" : "codex"));
   document.getElementById("knobMid").addEventListener("click", () => render("media"));
-  document.getElementById("knobBot").addEventListener("click", () => render("herdr"));
+  document.getElementById("knobBot").addEventListener("click", () => render(mode === "herdr" ? "herdrprompts" : "herdr"));
   addEventListener("keydown", e => {
-    const k = { "1": "codex", "2": "prompts", "3": "media", "4": "herdr" }[e.key];
+    const k = { "1": "codex", "2": "prompts", "3": "media", "4": "herdr", "5": "herdrprompts" }[e.key];
     if (k) render(k);
   });
 

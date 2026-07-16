@@ -18,8 +18,10 @@ Press an encoder knob once to select its mode: top for **Codex**, middle for
 **Media**, or bottom for **Herdr**. The change happens on the first press—no
 double-click is required—and all three LEDs change together: blue for Codex,
 orange for Media, and green for Herdr. Tapping the top knob a second time while
-already in Codex mode toggles the cyan **prompt bank**. Turning the bottom knob
-always controls volume, regardless of mode.
+already in Codex mode toggles the cyan **Codex prompt bank**; tapping the
+bottom knob a second time while in Herdr mode toggles the chartreuse **Herdr
+prompt bank**. Turning the bottom knob always controls volume, regardless of
+mode.
 
 ### Codex mode (blue)
 
@@ -86,6 +88,24 @@ The pane cross sits on the same physical keys as the Media-mode arrows, so
 directional muscle memory carries between the two modes. The Herdr helper uses
 its local socket API rather than injecting prefix-key sequences into a
 terminal. New workspaces and tabs inherit the focused pane's working directory.
+
+### Herdr prompt bank (chartreuse)
+
+Tap the bottom knob again while in Herdr mode to toggle a bank of the phrases
+actually mined from this user's Codex and Claude history — `go on` alone was
+typed 300+ times. Keys type into the focused Herdr pane without submitting;
+**Send** presses Enter. Shared intents sit on the same physical keys as the
+Codex prompt bank.
+
+|               |            |              |
+|---------------|------------|--------------|
+| Plan          | Go on      | Do it        |
+| Fix all       | Autoreview | Adversarial  |
+| Status?       | Resume     | Converge     |
+| Commit n push | Land it    | Send ⏎       |
+
+Edit the prompt texts in `bin/kbd-herdr` (the `prompt-*` actions) — no
+reflash needed.
 
 - Top knob: previous/next Herdr workspace
 - Middle knob: previous/next Herdr tab

@@ -52,6 +52,27 @@ dry_action() {
     printf 'HERDR %s\n' "$action"
 }
 
+type_prompt() {
+    local prompt="$1"
+    focus_herdr
+    if [[ "$DRY_RUN" == 1 ]]; then
+        printf 'TYPE %s\n' "$prompt"
+        return
+    fi
+    command -v ydotool >/dev/null 2>&1 || die 'ydotool is required to type prompts'
+    ydotool type --key-delay 2 -- "$prompt"
+}
+
+send_enter() {
+    focus_herdr
+    if [[ "$DRY_RUN" == 1 ]]; then
+        printf 'KEYS 28:1 28:0\n'
+        return
+    fi
+    command -v ydotool >/dev/null 2>&1 || die 'ydotool is required to send Enter'
+    ydotool key 28:1 28:0
+}
+
 cycle_json_list() {
     local kind="$1"
     local direction="$2"
@@ -173,6 +194,10 @@ Create:     new-workspace new-tab split-right split-down
 Navigate:   workspace-prev workspace-next tab-prev tab-next
             agent-prev agent-next pane-left pane-right pane-up pane-down
 Pane:       zoom
+Prompts:    prompt-plan prompt-go-on prompt-do-it prompt-fix-all
+            prompt-autoreview prompt-adversarial prompt-status
+            prompt-resume prompt-converge prompt-commit-push prompt-land
+            send
 Utility:    doctor
 EOF
 }
@@ -195,6 +220,18 @@ case "$action" in
     split-right)    split_pane right ;;
     split-down)     split_pane down ;;
     zoom)           zoom_pane ;;
+    prompt-plan)        type_prompt 'write a plan for this' ;;
+    prompt-go-on)       type_prompt 'go on' ;;
+    prompt-do-it)       type_prompt 'do it' ;;
+    prompt-fix-all)     type_prompt 'fix all' ;;
+    prompt-autoreview)  type_prompt 'run autoreview' ;;
+    prompt-adversarial) type_prompt 'do adversarial review' ;;
+    prompt-status)      type_prompt 'status?' ;;
+    prompt-resume)      type_prompt 'Continue from where you left off.' ;;
+    prompt-converge)    type_prompt 'converge' ;;
+    prompt-commit-push) type_prompt 'commit n push' ;;
+    prompt-land)        type_prompt 'land it' ;;
+    send)               send_enter ;;
     doctor)         doctor ;;
     -h|--help|help) usage ;;
     '')             usage; exit 2 ;;

@@ -4,9 +4,10 @@ DMQ Design SPIN · 12 keys · 3 clickable knobs · interactive version:
 [`cheatsheet.html`](cheatsheet.html)
 
 All three LEDs show the active mode together: **blue** for Codex, **cyan** for
-the Codex prompt bank, **orange** for Media, and **green** for Herdr. A single
-knob press changes all three LEDs; no double-click is required. Red means the
-bootloader chord is being held.
+the Codex prompt bank, **orange** for Media, **green** for Herdr, and
+**chartreuse** for the Herdr prompt bank. A single knob press changes all three
+LEDs; no double-click is required. Red means the bootloader chord is being
+held.
 
 ## Global controls
 
@@ -17,6 +18,7 @@ bootloader chord is being held.
 | Tap top knob again in Codex mode | Toggle the **Codex prompt bank** |
 | Tap middle knob | Switch to **Media** mode |
 | Tap bottom knob | Switch to **Herdr** mode |
+| Tap bottom knob again in Herdr mode | Toggle the **Herdr prompt bank** |
 | Hold bottom knob for at least 350 ms | Dictate globally; release to transcribe, type, and restore the previous mode |
 | Hold all three knobs together for 2 seconds | Enter the QMK bootloader |
 
@@ -88,6 +90,24 @@ directional muscle memory carries between the two modes.
 | Top | Previous/next Herdr workspace |
 | Middle | Previous/next Herdr tab |
 | Bottom | Volume down/up |
+
+## Herdr prompt bank — chartreuse LEDs
+
+Tap the bottom knob while already in Herdr mode to toggle this bank; holding
+it still dictates. Each key types one of your most-used agent prompts into the
+focused Herdr pane — mined from real Codex and Claude history — without
+sending it, so you can extend it first (`do adversarial review - 4 passes`).
+**Send** presses Enter. Shared intents sit on the same keys as the Codex
+prompt bank: Plan top-left, Go on top-middle, the commit row at the bottom.
+
+| | | |
+|---|---|---|
+| **Plan** | **Go on** | **Do it** |
+| **Fix all** | **Autoreview** | **Adversarial** |
+| **Status?** | **Resume** | **Converge** |
+| **Commit n push** | **Land it** | **Send ⏎** |
+
+The knobs keep their Herdr behavior: workspaces, tabs, and volume.
 
 ## Build, diagnose, and flash
 

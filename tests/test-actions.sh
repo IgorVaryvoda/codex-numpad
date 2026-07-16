@@ -46,6 +46,10 @@ assert_herdr_output tab-prev $'FOCUS herdr\nHERDR tab-prev'
 assert_herdr_output split-right $'FOCUS herdr\nHERDR split-right'
 assert_herdr_output pane-up $'FOCUS herdr\nHERDR pane-up'
 assert_herdr_output new-workspace $'FOCUS herdr\nHERDR new-workspace'
+assert_herdr_output prompt-go-on $'FOCUS herdr\nTYPE go on'
+assert_herdr_output prompt-commit-push $'FOCUS herdr\nTYPE commit n push'
+assert_herdr_output prompt-resume $'FOCUS herdr\nTYPE Continue from where you left off.'
+assert_herdr_output send $'FOCUS herdr\nKEYS 28:1 28:0'
 
 [[ "$(KBD_DICTATE_DRY_RUN=1 "$ROOT/bin/kbd-dictate" start)" == 'DICTATE start' ]]
 [[ "$(KBD_DICTATE_DRY_RUN=1 "$ROOT/bin/kbd-dictate" stop)" == 'DICTATE stop' ]]

@@ -58,9 +58,10 @@
     <text y="330" class="legend">Middle · seek media ±10 sec</text>
     <text y="365" class="legend">Bottom · volume (always)</text>
 
-    <text y="435" class="title" font-size="27">HERDR MODE</text>
-    <text y="480" class="legend">Top · Herdr workspaces</text>
-    <text y="515" class="legend">Middle · Herdr tabs</text>
-    <text y="550" class="legend">Keys · panes · agents · splits</text>
+    <text y="420" class="title" font-size="27">HERDR MODE</text>
+    <text y="465" class="legend">Top · Herdr workspaces</text>
+    <text y="500" class="legend">Middle · Herdr tabs</text>
+    <text y="535" class="legend">Keys · panes · agents · splits</text>
+    <text y="570" class="legend">Tap HERDR again · prompt bank</text>
   </g>
 </svg>
