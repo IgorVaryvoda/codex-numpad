@@ -196,7 +196,7 @@ Navigate:   workspace-prev workspace-next tab-prev tab-next
 Pane:       zoom
 Prompts:    prompt-plan prompt-go-on prompt-do-it prompt-fix-all
             prompt-autoreview prompt-adversarial prompt-status
-            prompt-resume prompt-converge prompt-commit-push prompt-land
+            prompt-resume prompt-improve-codex prompt-commit-push prompt-land
             send
 Utility:    doctor
 EOF
@@ -228,7 +228,7 @@ case "$action" in
     prompt-adversarial) type_prompt 'do adversarial review' ;;
     prompt-status)      type_prompt 'status?' ;;
     prompt-resume)      type_prompt 'Continue from where you left off.' ;;
-    prompt-converge)    type_prompt 'converge' ;;
+    prompt-improve-codex) type_prompt '/improve-codex' ;;
     prompt-commit-push) type_prompt 'commit n push' ;;
     prompt-land)        type_prompt 'land it' ;;
     send)               send_enter ;;

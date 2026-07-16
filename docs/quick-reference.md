@@ -104,7 +104,7 @@ prompt bank: Plan top-left, Go on top-middle, the commit row at the bottom.
 |---|---|---|
 | **Plan** | **Go on** | **Do it** |
 | **Fix all** | **Autoreview** | **Adversarial** |
-| **Status?** | **Resume** | **Converge** |
+| **Status?** | **Resume** | **Improve-codex** |
 | **Commit n push** | **Land it** | **Send ⏎** |
 
 The knobs keep their Herdr behavior: workspaces, tabs, and volume.

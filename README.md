@@ -101,7 +101,7 @@ Codex prompt bank.
 |---------------|------------|--------------|
 | Plan          | Go on      | Do it        |
 | Fix all       | Autoreview | Adversarial  |
-| Status?       | Resume     | Converge     |
+| Status?       | Resume     | Improve-codex |
 | Commit n push | Land it    | Send ⏎       |
 
 Edit the prompt texts in `bin/kbd-herdr` (the `prompt-*` actions) — no
