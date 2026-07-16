@@ -1,6 +1,7 @@
 # Codex Deck — Quick Reference
 
-DMQ Design SPIN · 12 keys · 3 clickable knobs
+DMQ Design SPIN · 12 keys · 3 clickable knobs · interactive version:
+[`cheatsheet.html`](cheatsheet.html)
 
 All three LEDs show the active mode together: **blue** for Codex, **cyan** for
 the Codex prompt bank, **orange** for Media, and **green** for Herdr. A single

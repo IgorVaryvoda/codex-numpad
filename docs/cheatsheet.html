@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codex Deck — Cheatsheet</title>
+<style>
+  :root {
+    --bg0: #060b13;
+    --bg1: #0d1420;
+    --board: #0b1520;
+    --keycap: #131f2e;
+    --stroke: #24384c;
+    --ink: #e8eef7;
+    --muted: #8ba0b8;
+    --led-codex: #2f7dff;
+    --led-prompts: #19d3e0;
+    --led-media: #ff7a1a;
+    --led-herdr: #23d566;
+    --led-reset: #ff3b30;
+    --led: var(--led-codex);
+    --disp: "Bahnschrift", "Archivo Narrow", "Roboto Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+    --mono: ui-monospace, "JetBrains Mono", "Cascadia Code", "Fira Code", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { color-scheme: dark; }
+  body {
+    background: radial-gradient(1200px 700px at 20% -10%, var(--bg1), var(--bg0));
+    color: var(--ink);
+    font: 15px/1.5 var(--mono);
+    min-height: 100vh;
+    padding: clamp(16px, 4vw, 48px);
+  }
+  a { color: inherit; }
+
+  header { max-width: 1180px; margin: 0 auto 28px; }
+  .eyebrow {
+    font-family: var(--disp);
+    font-stretch: condensed;
+    text-transform: uppercase;
+    letter-spacing: .32em;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  h1 {
+    font-family: var(--disp);
+    font-stretch: condensed;
+    text-transform: uppercase;
+    font-size: clamp(34px, 6vw, 58px);
+    letter-spacing: .02em;
+    line-height: 1;
+    margin-top: 6px;
+  }
+  h1 .mode-word { color: var(--led); transition: color .35s; }
+
+  main {
+    max-width: 1180px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(280px, 1fr);
+    gap: clamp(20px, 3vw, 44px);
+    align-items: start;
+  }
+
+  /* ---------- the deck ---------- */
+  .stage { position: relative; }
+  .stage::before {
+    content: "";
+    position: absolute;
+    inset: -8% -6%;
+    background: radial-gradient(60% 55% at 50% 45%, color-mix(in srgb, var(--led) 16%, transparent), transparent 70%);
+    transition: background .45s;
+    pointer-events: none;
+  }
+  .deck {
+    position: relative;
+    background: linear-gradient(178deg, #0e1a28, var(--board));
+    border: 1px solid var(--stroke);
+    border-radius: 26px;
+    padding: clamp(14px, 2.4vw, 26px);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: clamp(12px, 2vw, 22px);
+    box-shadow: 0 24px 60px -30px #000, inset 0 1px 0 #ffffff14;
+  }
+  .keys {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(8px, 1.2vw, 14px);
+  }
+  .key {
+    background: linear-gradient(180deg, #182636, var(--keycap));
+    border: 1px solid color-mix(in srgb, var(--led) 32%, var(--stroke));
+    border-radius: 14px;
+    min-height: 86px;
+    padding: 12px 10px 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 6px;
+    box-shadow: inset 0 1px 0 #ffffff12, 0 3px 0 #00000055;
+    transition: border-color .35s, opacity .25s;
+  }
+  .key .t {
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .key .s {
+    font-size: 11.5px;
+    color: color-mix(in srgb, var(--led) 62%, var(--muted));
+    transition: color .35s;
+  }
+  .keys.swap .key { opacity: 0; }
+
+  .knobs {
+    display: grid;
+    grid-template-rows: repeat(3, 1fr);
+    align-items: center;
+    gap: 10px;
+  }
+  .knob {
+    width: clamp(58px, 7vw, 76px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 4px solid color-mix(in srgb, var(--led) 75%, #223245);
+    background:
+      radial-gradient(circle at 32% 28%, #22344a, #0c1622 70%);
+    color: var(--ink);
+    font: 700 10px/1.2 var(--mono);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color .35s, transform .12s;
+    box-shadow: 0 6px 18px -8px #000;
+  }
+  .knob:active { transform: scale(.94); }
+  .knob:focus-visible, .chip:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 3px;
+  }
+  .knob small { display: block; font-weight: 400; color: var(--muted); letter-spacing: .06em; }
+
+  /* ---------- side panel ---------- */
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .chip {
+    --c: var(--muted);
+    font: 700 12px/1 var(--mono);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    padding: 9px 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: border-color .25s, background .25s;
+  }
+  .chip::before {
+    content: "";
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--c);
+    box-shadow: 0 0 8px var(--c);
+  }
+  .chip[aria-pressed="true"] {
+    border-color: var(--c);
+    background: color-mix(in srgb, var(--c) 14%, transparent);
+  }
+  .chip.codex   { --c: var(--led-codex); }
+  .chip.prompts { --c: var(--led-prompts); }
+  .chip.media   { --c: var(--led-media); }
+  .chip.herdr   { --c: var(--led-herdr); }
+  .chip.reset   { --c: var(--led-reset); }
+
+  .panel h2 {
+    font-family: var(--disp);
+    font-stretch: condensed;
+    text-transform: uppercase;
+    font-size: 26px;
+    letter-spacing: .03em;
+    color: var(--led);
+    transition: color .35s;
+  }
+  .panel .tag { color: var(--muted); font-size: 13px; margin: 4px 0 18px; }
+
+  .rows { list-style: none; display: grid; gap: 8px; }
+  .rows li {
+    display: grid;
+    grid-template-columns: 92px 1fr;
+    gap: 12px;
+    padding: 9px 12px;
+    border: 1px solid var(--stroke);
+    border-left: 3px solid color-mix(in srgb, var(--led) 65%, var(--stroke));
+    border-radius: 10px;
+    font-size: 13px;
+    transition: border-color .35s;
+  }
+  .rows b { font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: 11.5px; align-self: center; }
+
+  .gestures { margin-top: 22px; }
+  .gestures h3, footer h3 {
+    font-family: var(--disp);
+    font-stretch: condensed;
+    text-transform: uppercase;
+    letter-spacing: .22em;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  footer {
+    max-width: 1180px;
+    margin: 34px auto 0;
+    border-top: 1px solid var(--stroke);
+    padding-top: 18px;
+    color: var(--muted);
+    font-size: 13px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 28px;
+  }
+  footer code { color: var(--ink); }
+
+  @media (max-width: 880px) {
+    main { grid-template-columns: 1fr; }
+    .knobs { grid-template-rows: none; grid-template-columns: repeat(3, auto); justify-content: start; }
+    .deck { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <p class="eyebrow">DMQ Design SPIN · 12 keys · 3 knobs · one board, four lights</p>
+  <h1>Codex Deck / <span class="mode-word" id="modeWord">Codex</span></h1>
+</header>
+
+<main>
+  <section class="stage" aria-label="Deck diagram">
+    <div class="deck">
+      <div class="keys" id="keys"></div>
+      <div class="knobs">
+        <button class="knob" id="knobTop" title="Tap: Codex mode — tap again: prompt bank">top<small id="knobTopSub">codex</small></button>
+        <button class="knob" id="knobMid" title="Tap: Media mode">mid<small>media</small></button>
+        <button class="knob" id="knobBot" title="Tap: Herdr mode — hold 350 ms: dictate">bottom<small>herdr</small></button>
+      </div>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <div class="tabs" role="group" aria-label="Mode">
+      <button class="chip codex"   data-mode="codex"   aria-pressed="true">Codex</button>
+      <button class="chip prompts" data-mode="prompts" aria-pressed="false">Prompts</button>
+      <button class="chip media"   data-mode="media"   aria-pressed="false">Media</button>
+      <button class="chip herdr"   data-mode="herdr"   aria-pressed="false">Herdr</button>
+      <button class="chip reset"   data-mode="reset"   aria-pressed="false">Reset chord</button>
+    </div>
+
+    <h2 id="modeTitle">Codex</h2>
+    <p class="tag" id="modeTag"></p>
+
+    <ul class="rows" id="knobRows"></ul>
+
+    <div class="gestures">
+      <h3>Always, in every mode</h3>
+      <ul class="rows">
+        <li><b>Bottom turn</b><span>Volume down / up</span></li>
+        <li><b>Bottom hold</b><span>Hold ≥ 350 ms to dictate; release to transcribe locally and type at the cursor</span></li>
+        <li><b>All 3 knobs</b><span>Hold 2 s — LEDs turn red, board enters the QMK bootloader</span></li>
+      </ul>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  <h3>Flash</h3>
+  <span><code>make build</code> → <code>make flash</code> → hold all three knobs through the red light until the board disconnects.</span>
+  <span>Keys 1–4 switch modes on this page. Prompt-bank keys show their full prompt on hover.</span>
+</footer>
+
+<script>
+  const MODES = {
+    codex: {
+      word: "Codex",
+      tag: "Blue LEDs — drives Codex Desktop. Every key checks Codex has focus first.",
+      keys: [
+        ["Focus", "summon Codex"], ["New task", "codex://new"], ["Search", "all tasks"],
+        ["Back", "history"], ["Quick Chat", "ctrl+alt+n"], ["Forward", "history"],
+        ["Prev task", "cycle"], ["Find", "in this task"], ["Next task", "cycle"],
+        ["Dictate", "tap to toggle"], ["Command", "menu"], ["Enter · Act", "submit"]
+      ],
+      knobs: [
+        ["Top turn", "Previous / next Hyprland workspace"],
+        ["Mid turn", "Previous / next window"],
+        ["Top press", "Tap again for the cyan prompt bank"]
+      ]
+    },
+    prompts: {
+      word: "Prompts",
+      tag: "Cyan LEDs — each key types a ready-made prompt, nothing is sent. Edit it, then Enter · Act.",
+      keys: [
+        ["Plan", "plan, then execute", "Make a concise implementation plan, then execute it."],
+        ["Go on", "continue the task", "Go on. Continue from the current state and finish the task."],
+        ["Finish", "end to end", "Finish this end to end. Verify it before reporting back."],
+        ["Fix", "diagnose + verify", "Diagnose the current failure, implement the fix, and verify it."],
+        ["Test-fix", "run tests, fix", "Run the relevant tests and fix any failures."],
+        ["Review-fix", "review changes", "Review the current changes for bugs, regressions, and missing tests. Fix any issues you find."],
+        ["Status", "done / left / blocked", "Give me a concise status update: what is done, what remains, and any blockers."],
+        ["Explain", "implementation", "Explain the current implementation and the key tradeoffs."],
+        ["Docs", "update docs", "Update the relevant documentation to match the current behavior."],
+        ["Commit", "scoped commit", "Commit the current scoped changes with a clear conventional commit message. Keep unrelated work untouched."],
+        ["Ship", "commit + push", "Commit and push the current scoped changes. Keep unrelated work untouched and verify the remote handoff."],
+        ["Enter · Act", "send the prompt"]
+      ],
+      knobs: [
+        ["Top turn", "Previous / next Hyprland workspace"],
+        ["Mid turn", "Previous / next window"],
+        ["Top press", "Tap again to return to Codex"]
+      ]
+    },
+    media: {
+      word: "Media",
+      tag: "Orange LEDs — cursor, paging, and transport for whatever has focus.",
+      keys: [
+        ["Home", ""], ["↑", "up"], ["End", ""],
+        ["←", "left"], ["↓", "down"], ["→", "right"],
+        ["Page Up", ""], ["Mute", "toggle"], ["Page Dn", ""],
+        ["Play ∕ Pause", ""], ["Prev track", ""], ["Next track", ""]
+      ],
+      knobs: [
+        ["Top turn", "Screen brightness down / up"],
+        ["Mid turn", "Seek active media −10 s / +10 s"]
+      ]
+    },
+    herdr: {
+      word: "Herdr",
+      tag: "Green LEDs — panes, agents, and splits over Herdr's socket API. The pane cross matches the Media arrows.",
+      keys: [
+        ["Focus", "summon Herdr"], ["Pane ↑", ""], ["New tab", "inherits cwd"],
+        ["Pane ←", ""], ["Pane ↓", ""], ["Pane →", ""],
+        ["Prev agent", "cycle"], ["New wksp", "inherits cwd"], ["Next agent", "cycle"],
+        ["Split →", ""], ["Zoom", "pane"], ["Split ↓", ""]
+      ],
+      knobs: [
+        ["Top turn", "Previous / next Herdr workspace"],
+        ["Mid turn", "Previous / next Herdr tab"]
+      ]
+    },
+    reset: {
+      word: "Reset",
+      tag: "Red LEDs — the bootloader chord is being held. Keep holding 2 s to flash; let go to cancel.",
+      keys: [
+        ["", ""], ["", ""], ["", ""],
+        ["", ""], ["hold…", "all three knobs"], ["", ""],
+        ["", ""], ["", ""], ["", ""],
+        ["", ""], ["", ""], ["", ""]
+      ],
+      knobs: [
+        ["Release", "Cancels — mode colors return"],
+        ["Hold 2 s", "Board disconnects into the QMK bootloader"]
+      ]
+    }
+  };
+
+  const LED = { codex: "--led-codex", prompts: "--led-prompts", media: "--led-media", herdr: "--led-herdr", reset: "--led-reset" };
+  const keysEl = document.getElementById("keys");
+  const rowsEl = document.getElementById("knobRows");
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let mode = "codex";
+
+  function render(next) {
+    mode = next;
+    const m = MODES[mode];
+    document.documentElement.style.setProperty("--led", `var(${LED[mode]})`);
+    document.getElementById("modeWord").textContent = m.word;
+    document.getElementById("modeTitle").textContent = m.word === "Reset" ? "Bootloader chord" : m.word + " mode";
+    document.getElementById("modeTag").textContent = m.tag;
+    document.getElementById("knobTopSub").textContent = mode === "codex" ? "prompts" : "codex";
+    document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", String(c.dataset.mode === mode)));
+
+    const paint = () => {
+      keysEl.innerHTML = m.keys.map(([t, s, full]) =>
+        `<div class="key"${full ? ` title="${full.replace(/"/g, "&quot;")}"` : ""}><span class="t">${t}</span><span class="s">${s}</span></div>`
+      ).join("");
+      rowsEl.innerHTML = m.knobs.map(([k, v]) => `<li><b>${k}</b><span>${v}</span></li>`).join("");
+      keysEl.classList.remove("swap");
+    };
+    history.replaceState(null, "", "#" + mode);
+    if (reduced || !keysEl.childElementCount) { paint(); return; }
+    keysEl.classList.add("swap");
+    setTimeout(paint, 140);
+  }
+
+  document.querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => render(c.dataset.mode)));
+  document.getElementById("knobTop").addEventListener("click", () => render(mode === "codex" ? "prompts" : "codex"));
+  document.getElementById("knobMid").addEventListener("click", () => render("media"));
+  document.getElementById("knobBot").addEventListener("click", () => render("herdr"));
+  addEventListener("keydown", e => {
+    const k = { "1": "codex", "2": "prompts", "3": "media", "4": "herdr" }[e.key];
+    if (k) render(k);
+  });
+
+  const initial = location.hash.slice(1);
+  render(MODES[initial] ? initial : "codex");
+</script>
+</body>
+</html>

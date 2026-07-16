@@ -8,7 +8,9 @@ while giving every other control a real job.
 ![Codex Deck layout](docs/layout.svg)
 
 **[Open the complete quick reference](docs/quick-reference.md)** for every key,
-knob gesture, mode color, and reset control on one page.
+knob gesture, mode color, and reset control on one page, or open
+[`docs/cheatsheet.html`](docs/cheatsheet.html) in a browser for an interactive
+version — click the knobs or press 1–4 to relight the board in each mode.
 
 ## The three modes
 
@@ -112,6 +114,14 @@ keymap. It appends one `source` line to the existing user Hyprland config and
 compiles the firmware in an isolated, current QMK worktree. Your existing
 dirty QMK checkout is not modified. The installer does **not** flash unless
 explicitly requested.
+
+The symlinks embed the repo's absolute path. If you later move or rename the
+repo, re-run `./install.sh` from the new location — otherwise the deck
+degrades confusingly: Media mode keeps working (it emits plain keycodes) while
+every Codex, Herdr, and dictation action silently does nothing. Check for
+stragglers with `find ~/.local/bin ~/.config/hypr -xtype l`. Whisper builds
+made before this note may also need `rm -rf .runtime/whisper.cpp/build &&
+make dictation` after a move; current builds are relocatable.
 
 ```bash
 ./install.sh
