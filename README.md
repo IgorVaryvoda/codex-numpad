@@ -12,9 +12,12 @@ knob gesture, mode color, and reset control on one page.
 
 ## The three modes
 
-Press one of the three encoder knobs to select a mode. All three LEDs use one
-solid mode color: blue for **Codex**, amber for **Media**, and green for
-**Herdr**. Turning the bottom knob always controls volume, regardless of mode.
+Press an encoder knob once to select its mode: top for **Codex**, middle for
+**Media**, or bottom for **Herdr**. The change happens on the first press—no
+double-click is required—and all three LEDs change together: blue for Codex,
+orange for Media, and green for Herdr. Tapping the top knob a second time while
+already in Codex mode toggles the cyan **prompt bank**. Turning the bottom knob
+always controls volume, regardless of mode.
 
 ### Codex mode (blue)
 
@@ -29,15 +32,33 @@ solid mode color: blue for **Codex**, amber for **Media**, and green for
 - Middle knob: previous/next window on the current workspace
 - Bottom knob: volume down/up
 
-Tap the top knob to enter Codex mode. Hold the **bottom knob** in any mode to record global
-dictation; release to transcribe locally and type at the current cursor. The
-dedicated Dictation key toggles recording when tap-to-start/tap-to-stop is more
-convenient.
+Tap the top knob to enter Codex mode. Hold the **bottom knob** for at least
+350 ms in any mode to record global dictation; release to transcribe locally,
+type at the current cursor, and return to the mode you were using. A short
+bottom-knob press selects Herdr instead. The dedicated Dictation key toggles
+recording when tap-to-start/tap-to-stop is more convenient.
 
 Every action first verifies that Codex actually has focus. If focus fails, the
 helper refuses to type into another app.
 
-### Media mode (amber)
+### Codex prompt bank (cyan)
+
+Tap the top knob again while in Codex mode to toggle a second bank of keys that
+type ready-made prompts into Codex. Nothing is sent automatically: each key
+types its prompt, leaves the cursor in place so you can edit it, and
+**Enter/Act**—in the same bottom-right position as in Codex mode—submits it.
+Rows follow the work lifecycle: start, fix, understand, ship.
+
+|          |            |             |
+|----------|------------|-------------|
+| Plan     | Go on      | Finish      |
+| Fix      | Test-fix   | Review-fix  |
+| Status   | Explain    | Docs        |
+| Commit   | Ship       | Enter/Act   |
+
+The knobs keep their Codex assignments: workspaces, windows, and volume.
+
+### Media mode (orange)
 
 |             |      |              |
 |-------------|------|--------------|
@@ -54,20 +75,23 @@ helper refuses to type into another app.
 
 |              |                |               |
 |--------------|----------------|---------------|
-| Focus Herdr  | New workspace  | New tab       |
-| Pane left    | Pane up        | Pane right    |
-| Prev agent   | Pane down      | Next agent    |
+| Focus Herdr  | Pane up        | New tab       |
+| Pane left    | Pane down      | Pane right    |
+| Prev agent   | New workspace  | Next agent    |
 | Split right  | Zoom pane      | Split down    |
 
-The Herdr helper uses its local socket API rather than injecting prefix-key
-sequences into a terminal. New workspaces and tabs inherit the focused pane's
-working directory.
+The pane cross sits on the same physical keys as the Media-mode arrows, so
+directional muscle memory carries between the two modes. The Herdr helper uses
+its local socket API rather than injecting prefix-key sequences into a
+terminal. New workspaces and tabs inherit the focused pane's working directory.
 
 - Top knob: previous/next Herdr workspace
 - Middle knob: previous/next Herdr tab
 - Bottom knob: volume down/up
 
-Tap the bottom knob to enter Herdr mode; hold it to dictate instead.
+Tap the bottom knob to enter Herdr mode; hold it to dictate instead. The LEDs
+may briefly turn green when the hold begins because the firmware distinguishes
+the tap from the dictation hold by timing it.
 
 ## Install and build
 
@@ -108,9 +132,10 @@ make flash
 
 For the first install, when the flasher starts waiting, press the SPIN's tiny
 side-mounted reset button directly underneath the USB-C connector. Once this
-firmware is installed, hold all three knobs for two seconds instead; all LEDs
-turn red before the board enters the bootloader. The flash helper returns the
-board to the deck firmware after a successful write.
+firmware is installed, press and hold all three knobs together for a full two
+seconds. All three LEDs turn red as soon as the chord is recognized; keep
+holding until the device disconnects and enters the bootloader. The flash
+helper returns the board to the deck firmware after a successful write.
 
 ## Development
 
@@ -122,12 +147,14 @@ make build
 Set `KBD_CODEX_DRY_RUN=1` to print an action instead of focusing or typing:
 
 ```bash
-KBD_CODEX_DRY_RUN=1 bin/kbd-codex review
+KBD_CODEX_DRY_RUN=1 bin/kbd-codex new
 ```
 
 The QMK firmware only emits uncommon `F13`–`F24` signals. Desktop behavior
 lives in `hypr/codex-numpad.conf`, `bin/kbd-codex`, and `bin/kbd-herdr`, so most
-actions can be changed without reflashing the board.
+actions can be changed without reflashing the board. Mode colors use QMK
+RGBLight Layers with one full-strip segment per mode, which keeps all three LED
+zones synchronized.
 
 Dictation prefers a connected Razer Seiren Mini, falls back to the default
 PulseAudio source, and runs a local `whisper.cpp` model. No recording is

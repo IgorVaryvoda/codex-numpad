@@ -23,6 +23,8 @@ assert_output command $'FOCUS codex-desktop\nKEYS 29:1 42:1 25:1 25:0 42:0 29:0'
 assert_output act $'FOCUS codex-desktop\nKEYS 28:1 28:0'
 assert_output finish $'FOCUS codex-desktop\nTYPE Finish this end to end. Verify it before reporting back.'
 assert_output ship $'FOCUS codex-desktop\nTYPE Commit and push the current scoped changes. Keep unrelated work untouched and verify the remote handoff.'
+assert_output plan $'FOCUS codex-desktop\nTYPE Make a concise implementation plan, then execute it.'
+assert_output go-on $'FOCUS codex-desktop\nTYPE Go on. Continue from the current state and finish the task.'
 
 assert_herdr_output() {
     local action="$1"
@@ -42,6 +44,8 @@ assert_output seek-forward $'MEDIA seek 10+'
 assert_herdr_output workspace-next $'FOCUS herdr\nHERDR workspace-next'
 assert_herdr_output tab-prev $'FOCUS herdr\nHERDR tab-prev'
 assert_herdr_output split-right $'FOCUS herdr\nHERDR split-right'
+assert_herdr_output pane-up $'FOCUS herdr\nHERDR pane-up'
+assert_herdr_output new-workspace $'FOCUS herdr\nHERDR new-workspace'
 
 [[ "$(KBD_DICTATE_DRY_RUN=1 "$ROOT/bin/kbd-dictate" start)" == 'DICTATE start' ]]
 [[ "$(KBD_DICTATE_DRY_RUN=1 "$ROOT/bin/kbd-dictate" stop)" == 'DICTATE stop' ]]

@@ -13,7 +13,7 @@
   </defs>
   <rect width="1200" height="760" rx="32" fill="url(#bg)"/>
   <text x="70" y="74" class="title">CODEX + HERDR DECK · DMQ SPIN</text>
-  <text x="70" y="108" class="sub">Press a knob to change mode · turn knobs for the actions shown on the right</text>
+  <text x="70" y="108" class="sub">Press a knob to change mode · tap CODEX again for the prompt bank · knob actions at right</text>
 
   <g filter="url(#shadow)">
     <rect x="65" y="150" width="720" height="530" rx="34" fill="#0b1724" stroke="#20364b" stroke-width="3"/>
@@ -47,19 +47,20 @@
 
   <g transform="translate(845 175)">
     <text class="title" font-size="27">CODEX KNOBS</text>
-    <text y="65" class="legend">Top · Hyprland workspaces</text>
-    <text y="105" class="legend">Middle · Hyprland windows</text>
-    <text y="145" class="legend">Bottom · volume (always)</text>
-    <text y="175" class="legend">Hold bottom · dictate globally</text>
+    <text y="60" class="legend">Top · Hyprland workspaces</text>
+    <text y="95" class="legend">Middle · Hyprland windows</text>
+    <text y="130" class="legend">Bottom · volume (always)</text>
+    <text y="165" class="legend">Hold bottom · dictate globally</text>
+    <text y="200" class="legend">Tap CODEX again · prompt bank</text>
 
-    <text y="225" class="title" font-size="27">MEDIA KNOBS</text>
-    <text y="275" class="legend">Top · screen brightness</text>
-    <text y="315" class="legend">Middle · seek media ±10 sec</text>
-    <text y="355" class="legend">Bottom · volume (always)</text>
+    <text y="250" class="title" font-size="27">MEDIA KNOBS</text>
+    <text y="295" class="legend">Top · screen brightness</text>
+    <text y="330" class="legend">Middle · seek media ±10 sec</text>
+    <text y="365" class="legend">Bottom · volume (always)</text>
 
     <text y="435" class="title" font-size="27">HERDR MODE</text>
-    <text y="485" class="legend">Top · Herdr workspaces</text>
-    <text y="525" class="legend">Middle · Herdr tabs</text>
-    <text y="565" class="legend">Keys · panes · agents · splits</text>
+    <text y="480" class="legend">Top · Herdr workspaces</text>
+    <text y="515" class="legend">Middle · Herdr tabs</text>
+    <text y="550" class="legend">Keys · panes · agents · splits</text>
   </g>
 </svg>

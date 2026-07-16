@@ -1,10 +1,10 @@
 /*
  * Codex Deck keymap for the DMQ Design SPIN.
  *
- * The firmware emits otherwise-unused F13-F24 chords in Codex and Control
- * modes. Hyprland turns those signals into app-aware actions. This keeps the
- * board useful in every app and avoids baking desktop-specific commands into
- * QMK.
+ * The firmware emits otherwise-unused F13-F24 chords: plain in Codex mode,
+ * Shift in the Codex prompt bank, and Alt in Herdr mode. Hyprland turns those
+ * signals into app-aware actions. This keeps the board useful in every app
+ * and avoids baking desktop-specific commands into QMK.
  */
 #include QMK_KEYBOARD_H
 
@@ -12,6 +12,7 @@ enum layers {
     _CODEX,
     _MEDIA,
     _HERDR,
+    _PROMPTS,
 };
 
 enum custom_keycodes {
@@ -42,6 +43,16 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         A(KC_F19),    A(KC_F20),    A(KC_F21),    MODE_HERDR,
         A(KC_F22),    A(KC_F23),    A(KC_F24)
     ),
+
+    /* Codex prompt bank: tap the top knob again while in Codex mode.
+     * Shift+F24 is reserved for dictation, so the bottom-right key stays
+     * plain F24 (Enter/Act) to submit a typed prompt. */
+    [_PROMPTS] = LAYOUT(
+        S(KC_F13),    S(KC_F14),    S(KC_F15),    MODE_CODEX,
+        S(KC_F16),    S(KC_F17),    S(KC_F18),    MODE_MEDIA,
+        S(KC_F19),    S(KC_F20),    S(KC_F21),    MODE_HERDR,
+        S(KC_F22),    S(KC_F23),    KC_F24
+    ),
 };
 
 static void tap(uint16_t keycode) {
@@ -57,7 +68,7 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
         return false;
     }
 
-    if (layer == _CODEX) {
+    if (layer == _CODEX || layer == _PROMPTS) {
         if (index == 0) { /* physical top */
             tap(clockwise ? C(KC_F14) : C(KC_F13)); /* Hypr workspace */
         } else if (index == 1) { /* physical middle */
@@ -89,6 +100,9 @@ const rgblight_segment_t PROGMEM media_rgb_layer[] = RGBLIGHT_LAYER_SEGMENTS(
 const rgblight_segment_t PROGMEM herdr_rgb_layer[] = RGBLIGHT_LAYER_SEGMENTS(
     {0, RGBLIGHT_LED_COUNT, HSV_GREEN}
 );
+const rgblight_segment_t PROGMEM prompts_rgb_layer[] = RGBLIGHT_LAYER_SEGMENTS(
+    {0, RGBLIGHT_LED_COUNT, HSV_CYAN}
+);
 const rgblight_segment_t PROGMEM reset_rgb_layer[] = RGBLIGHT_LAYER_SEGMENTS(
     {0, RGBLIGHT_LED_COUNT, HSV_RED}
 );
@@ -96,14 +110,18 @@ const rgblight_segment_t *const PROGMEM mode_rgb_layers[] = RGBLIGHT_LAYERS_LIST
     codex_rgb_layer,
     media_rgb_layer,
     herdr_rgb_layer,
+    prompts_rgb_layer,
     reset_rgb_layer
 );
 
+#define RESET_RGB_LAYER 4
+
 static void paint_layer(uint8_t layer) {
-    rgblight_set_layer_state(3, false);
+    rgblight_set_layer_state(RESET_RGB_LAYER, false);
     rgblight_set_layer_state(0, layer == _CODEX);
     rgblight_set_layer_state(1, layer == _MEDIA);
     rgblight_set_layer_state(2, layer == _HERDR);
+    rgblight_set_layer_state(3, layer == _PROMPTS);
 }
 
 static bool     mode_knob_pressed[3] = {false, false, false};
@@ -132,7 +150,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (record->event.pressed) {
         mode_knob_pressed[knob] = true;
         if (knob == 0) {
-            layer_move(_CODEX);
+            /* A second top-knob press while in Codex toggles the prompt bank. */
+            layer_move(get_highest_layer(layer_state) == _CODEX ? _PROMPTS : _CODEX);
         } else if (knob == 1) {
             layer_move(_MEDIA);
         } else {
@@ -180,7 +199,7 @@ void matrix_scan_user(void) {
             unregister_code16(S(KC_F24));
             dictation_held = false;
         }
-        rgblight_set_layer_state(3, true);
+        rgblight_set_layer_state(RESET_RGB_LAYER, true);
     } else if (reset_combo && timer_elapsed(reset_combo_timer) >= 2000) {
         bootloader_jump();
     }
