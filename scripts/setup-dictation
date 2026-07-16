@@ -19,16 +19,19 @@ if [[ ! -d "$RUNTIME/.git" ]]; then
     git clone --depth 1 --branch "$REF" https://github.com/ggerganov/whisper.cpp.git "$RUNTIME"
 fi
 
+# $ORIGIN-relative runpaths keep the uninstalled build working if the repo moves.
+CMAKE_COMMON=(-DCMAKE_BUILD_TYPE=Release -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON)
+
 if [[ ! -x "$RUNTIME/build/bin/whisper-cli" ]]; then
     if command -v nvcc >/dev/null 2>&1; then
         if ! cmake -S "$RUNTIME" -B "$RUNTIME/build" \
-            -DCMAKE_BUILD_TYPE=Release \
+            "${CMAKE_COMMON[@]}" \
             -DGGML_CUDA=ON; then
             rm -rf "$RUNTIME/build"
-            cmake -S "$RUNTIME" -B "$RUNTIME/build" -DCMAKE_BUILD_TYPE=Release
+            cmake -S "$RUNTIME" -B "$RUNTIME/build" "${CMAKE_COMMON[@]}"
         fi
     else
-        cmake -S "$RUNTIME" -B "$RUNTIME/build" -DCMAKE_BUILD_TYPE=Release
+        cmake -S "$RUNTIME" -B "$RUNTIME/build" "${CMAKE_COMMON[@]}"
     fi
     cmake --build "$RUNTIME/build" --config Release -j "$(nproc)"
 fi
